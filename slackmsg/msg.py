@@ -45,7 +45,7 @@ def sendmsg(args, data):
 	# os.system('echo')
 
 def main():
-	with open(os.path.join(os.path.dirname(__file__), 'data.json'), 'r') as f:
+	with open(os.environ['SLACKDATA'], 'r') as f:
 		data = json.load(f)
 	args = cmdline_args()
 	sendmsg(args, data)
