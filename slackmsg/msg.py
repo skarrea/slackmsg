@@ -4,7 +4,10 @@ Module for sending slack messages using curl
 import json
 import os
 import argparse
-import tempfile
+import logging
+import os
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 
 def cmdline_args():
 		# Make parser object
@@ -25,22 +28,29 @@ def cmdline_args():
 
 def sendmsg(args, data):
 	token = data["token"]
+
+	if args.verbosity == 1:
+		logging.basicConfig(level=logging.WARNING)
+	elif args.verbosity == 2:
+		logging.basicConfig(level=logging.DEBUG)
+	elif args.verbosity == 0:
+		logging.basicConfig(level=logging.ERROR)
+
 	if args.to:
 		recipientID = data["channelID"][args.to.lower()]
 	else:
 		recipientID = data["channelID"][args.toID]
-	expression = f'curl -X POST "https://slack.com/api/chat.postMessage" -H  "accept: application/json" -d token="{token}" -d channel="{recipientID}" -d text="{args.msg}" --silent'
-	out = os.popen(expression).read()
-	status = json.loads(out)
-	if args.verbosity == 1:
-		if status['ok']:
-			print("Message sent sucessfully")
-		else:
-			print("Ooops. Somehting went wrong. Dumping log\n")
-			print(status)
-	elif args.verbosity == 2:
-		print(status)
 
+	client = WebClient(token=token)
+
+	try:
+		response = client.chat_postMessage(
+			channel=recipientID,
+			text=args.msg
+		)
+	except SlackApiError as e:
+		# You will get a SlackApiError if "ok" is False
+		assert e.response["error"]    # str like 'invalid_auth', 'channel_not_found'
 	# print(out)
 	# os.system('echo')
 
